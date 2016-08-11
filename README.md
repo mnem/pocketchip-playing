@@ -49,12 +49,14 @@ way is to use `nano` on the device:
 
 1. From the ssh session: `nano main.c`
 2. Enter a simple C program:
+
     #include <stdio.h>
 
     int main(int argc, char* argv[]) {
         printf("Hello, world!\n");
         return 0;
     }
+
 3. Compile the program: `gcc --std=c11 -ggdb main.c -o main`
 4. Run the compiled program: `./main`
 
