@@ -38,34 +38,34 @@ open_fb:
     str r0, [r1]
 
     @ r0 contains the fd
+    @
+    @ Get the var info for the screen
     mov r1, #0x4600 @ FBIOGET_VSCREENINFO
     ldr r2, screen_var_info_addr
     bl ioctl @ ioctl(screen_fd, FBIOGET_VSCREENINFO, &var_info)
 
+    @ Get the fix info for the screen
     mov r0, r4
     ldr r1, =0x4602 @ FBIOGET_FSCREENINFO (0x4602)
     ldr r2, screen_fix_info_addr
     bl ioctl @ ioctl(screen_fd, FBIOGET_FSCREENINFO, &fix_info)
 
-@ const size_t screen_byte_size = var_info.xres * var_info.yres * var_info.bits_per_pixel / 8;
-@ uint32_t * const buffer = (uint32_t *)mmap(NULL, screen_byte_size, PROT_READ | PROT_WRITE, MAP_SHARED, screen_fd, 0 /* offset */);
-
-    @ xres: 0
-    @ yres: 4
-    @ bpp: 24
-
-    @ size_t screen_byte_size = var_info.xres * var_info.yres * var_info.bits_per_pixel / 8;
+    @ Work out the screen size
     ldr r0, screen_var_info_addr
-    ldr r1, [r0, #4] @ yres
-    ldr r2, [r0, #24] @ bpp
-    ldr r0, [r0] @ xres
+    ldr r1, [r0, #4] @ var_info.yres
+    ldr r2, [r0, #24] @ var_info.bpp
+    ldr r0, [r0] @ var_info.xres
 
     @ xres * yres * bpp / 8
     mul r0, r0, r1
     mul r0, r0, r2
     mov r1, r0, ASR #3
 
-    @ int32_t * buffer = (uint32_t *)mmap(NULL, screen_byte_size, PROT_READ | PROT_WRITE, MAP_SHARED, screen_fd, 0 /* offset */);
+    @ Store the screen byte size
+    ldr r0, screen_byte_size_addr
+    str r1, [r0]
+
+    @ Use mmap to access the screen buffer
     mov r6, #0 @ Handy NULL
 
     mov r5, sp @ Store sp in r5
@@ -76,7 +76,7 @@ open_fb:
     @ The other params are passed through the stack in reverse order
     push {r6} @ Param 6: 0, offset
     push {r4} @ Param 5: fd
-    bl mmap
+    bl mmap @ mmap(NULL, screen_byte_size, PROT_READ | PROT_WRITE, MAP_SHARED, screen_fd, 0 /* offset */);
 
     @ restore the stack pointer
     mov sp, r5
@@ -111,6 +111,8 @@ main:
 
     bl open_fb
     bl draw
+
+    @ TODO: Unmap the memory and close the device
 
     mov r1, r0              @ Number in param 2
     ldr r0, format_addr     @ Format in param 1
