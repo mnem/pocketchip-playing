@@ -110,8 +110,8 @@ open_fb_got_fix_info:
     @ restore the stack pointer
     mov sp, r5
 
-    cmp r0, #0
-    bpl open_fb_mmap_ok
+    cmp r0, #-1
+    bne open_fb_mmap_ok
     b open_fb_close_fd_and_fail_and_exit
 
 open_fb_mmap_ok:
@@ -193,17 +193,17 @@ main:
     push {r4, lr}
 
     bl open_fb
-    cmp r0, #FALSE
+    cmp r0, #TRUE
     movne r0, #1
     bne main_exit
 
     bl draw
-    cmp r0, #FALSE
+    cmp r0, #TRUE
     movne r0, #2
     bne main_exit
 
     bl close_fb
-    cmp r0, #FALSE
+    cmp r0, #TRUE
     movne r0, #3
     bne main_exit
 
